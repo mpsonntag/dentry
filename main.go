@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-
 	basePath := os.Getenv("GOPATH")
 	if basePath == "" {
 		panic("Cannot find gopath")
@@ -31,17 +30,21 @@ func main() {
 	fmt.Printf("InFile: '%s', outFile: '%s'\n", inFile, outFile)
 
 	cont, err := ioutil.ReadFile(inFile)
-	fmt.Printf("file content: \n---\n%s\n---\n", string(cont))
+	if err != nil {
+		panic(fmt.Sprintf("Error reading file: '%s'", err.Error()))
+	}
+	fmt.Printf("file content: \n\n---\n%s\n---\n", string(cont))
 
+	app(&cont)
+}
 
-	fmt.Println("dentry started")
-
+func app(cont *[]byte) {
 	gtk.Init(nil)
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
 		fmt.Printf("Error occurred: '%s'", err.Error())
 	}
-	win.SetTitle("Other Dentry")
+	win.SetTitle("Dentry")
 
 	win.SetDefaultSize(800,600)
 
@@ -50,7 +53,7 @@ func main() {
 		gtk.MainQuit()
 	})
 
-	label, err := gtk.LabelNew(fmt.Sprintf("content of file:\n%s", string(cont)))
+	label, err := gtk.LabelNew(fmt.Sprintf("content of file:\n%s", string(*cont)))
 	if err != nil {
 		fmt.Println("Error creating label")
 	}
