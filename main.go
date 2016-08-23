@@ -49,11 +49,11 @@ func main() {
 		panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
 	}
 
-	app(&cont, tagList)
+	app(tagList)
 }
 
 // app is the main function to open the GUI application
-func app(cont *[]byte, tagList *[]tagEnt) {
+func app(tagList *[]tagEnt) {
 	gtk.Init(nil)
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
@@ -68,18 +68,39 @@ func app(cont *[]byte, tagList *[]tagEnt) {
 		gtk.MainQuit()
 	})
 
-	vbox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
+	grid, err := gtk.GridNew()
+	if err != nil {
+		fmt.Printf("Error creating grid: %s\n", err.Error())
+	}
 
-	for _, tag := range *tagList {
-		label, err := gtk.LabelNew(fmt.Sprintf("---%s---\n\nAssociated Tags: '%s'\n\n", tag.body, tag.tags))
+	for i, ent := range *tagList {
+		label, err := gtk.LabelNew(ent.body)
 		if err != nil {
 			fmt.Println("Error creating label")
 			return
 		}
-		vbox.Add(label)
+
+		grid.Attach(label, 0, i, 1, 1)
+
+		hboxTag, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 2)
+		if err != nil {
+			fmt.Printf("Error creating hboxTag: %s", err.Error())
+		}
+
+		for _, tag := range ent.tags {
+			but, err := gtk.ButtonNew()
+			if err != nil {
+				fmt.Printf("Error creating button: %s", err.Error())
+				return
+			}
+			but.SetLabel(tag)
+			hboxTag.Add(but)
+		}
+
+		grid.Attach(hboxTag, 1, i, 1, 1)
 	}
 
-	win.Add(vbox)
+	win.Add(grid)
 
 	// required to show window
 	win.ShowAll()
@@ -95,7 +116,7 @@ func app(cont *[]byte, tagList *[]tagEnt) {
 // body part of the tagEnt instance.
 // All new tagEnt instances are stored in a tagEntList instance and returned if no error
 // occurred.
-func textToEnt(cont *[]byte) (*[]tagEnt ,error) {
+func textToEnt(cont *[]byte) (*[]tagEnt, error) {
 	tmp := make([]tagEnt, 0, 32)
 
 	r := bytes.NewReader(*cont)
