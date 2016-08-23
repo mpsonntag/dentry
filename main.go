@@ -20,11 +20,6 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-// tagEntList is the container for tagEnt instances
-type tagEntList struct {
-	content []tagEnt
-}
-
 // tagEnt contains information stored in data and data associated with
 // this information stored in tags
 type tagEnt struct {
@@ -49,16 +44,16 @@ func main() {
 		panic(fmt.Sprintf("Error reading file: '%s'", err.Error()))
 	}
 
-	err = textToEnt(&cont)
+	tagList, err := textToEnt(&cont)
 	if err != nil {
 		panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
 	}
 
-	app(&cont)
+	app(&cont, tagList)
 }
 
 // app is the main function to open the GUI application
-func app(cont *[]byte) {
+func app(cont *[]byte, tagList *[]tagEnt) {
 	gtk.Init(nil)
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
@@ -73,12 +68,18 @@ func app(cont *[]byte) {
 		gtk.MainQuit()
 	})
 
-	label, err := gtk.LabelNew(fmt.Sprintf("content of file:\n%s", string(*cont)))
-	if err != nil {
-		fmt.Println("Error creating label")
+	vbox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
+
+	for _, tag := range *tagList {
+		label, err := gtk.LabelNew(fmt.Sprintf("---%s---\n\nAssociated Tags: '%s'\n\n", tag.body, tag.tags))
+		if err != nil {
+			fmt.Println("Error creating label")
+			return
+		}
+		vbox.Add(label)
 	}
 
-	win.Add(label)
+	win.Add(vbox)
 
 	// required to show window
 	win.ShowAll()
@@ -94,8 +95,8 @@ func app(cont *[]byte) {
 // body part of the tagEnt instance.
 // All new tagEnt instances are stored in a tagEntList instance and returned if no error
 // occurred.
-func textToEnt(cont *[]byte) error {
-	tmp := &tagEntList{}
+func textToEnt(cont *[]byte) (*[]tagEnt ,error) {
+	tmp := make([]tagEnt, 0, 32)
 
 	r := bytes.NewReader(*cont)
 	s := bufio.NewScanner(r)
@@ -113,18 +114,19 @@ func textToEnt(cont *[]byte) error {
 				tags: currTags,
 				body: currParts[1],
 			}
-			tmp.content = append(tmp.content, t)
+			tmp = append(tmp, t)
 		}
 	}
 	if err := s.Err(); err != nil {
-		return err
+		return nil, err
 	}
 
-	for _, entry := range tmp.content {
+	// TODO for testing only, remove later
+	for _, entry := range tmp {
 		fmt.Printf("\tTags: '%s'\n\tcontent: '%s'\n", entry.tags, entry.body)
 	}
 
-	return nil
+	return &tmp, nil
 }
 
 // splitOnHash is a function satisfying bufio SplitFunc
