@@ -1,0 +1,31 @@
+(#)tag1, tag2 , tag3 #)
+- parse
+- this
+
+- text
+
+(#) tag1 , tag2,TAG3,Tag4#)
+- check if in text tags (#)open#) or (#)done#) are not parsed.
+- we could use a very low level markup language like markdown to format text
+- doi resolver?
+- option to see changelog for each and every entry - usually not eingeblendet.
+- start with last 20 entries before filtering
+- verweise auf andere entries über ID
+
+- irgendwas das offene punkte als done!(yay) markiert - damit man die aus suchen ausblenden kann oder zumindest ausgraut.
+
+(#)tag1, incomplete
+- test
+- these incomplete
+- tags
+
+(#)tagNotes#)
+complete in between entry
+
+(#)tag1, multi,
+line, tags#)
+- find out whether this
+- should
+- work
+or not.
+
