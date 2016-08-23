@@ -10,6 +10,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -29,18 +30,8 @@ func main() {
 
 	fmt.Printf("InFile: '%s', outFile: '%s'\n", inFile, outFile)
 
-	f, err := os.Open(inFile)
-	defer f.Close()
-	if err != nil {
-		panic(fmt.Sprintf("Error opening file: '%s'", err.Error()))
-	}
-
-	fileInfo, err := f.Stat()
-	if err != nil {
-		panic(fmt.Sprintf("Error reading file stat: '%s'", err.Error()))
-	}
-	fmt.Printf("file '%s' contains '%d' bytes\n", fileInfo.Name(), fileInfo.Size())
-
+	cont, err := ioutil.ReadFile(inFile)
+	fmt.Printf("file content: \n---\n%s\n---\n", string(cont))
 
 
 	fmt.Println("dentry started")
@@ -58,6 +49,13 @@ func main() {
 	win.Connect("destroy", func(){
 		gtk.MainQuit()
 	})
+
+	label, err := gtk.LabelNew(fmt.Sprintf("content of file:\n%s", string(cont)))
+	if err != nil {
+		fmt.Println("Error creating label")
+	}
+
+	win.Add(label)
 
 	// required to show window
 	win.ShowAll()
