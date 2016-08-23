@@ -3,26 +3,27 @@ package main
 import (
 	"fmt"
 
-	"github.com/mattn/go-gtk/gtk"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 func main() {
 	fmt.Println("dentry started")
 
 	gtk.Init(nil)
-	window := gtk.NewWindow(gtk.WINDOW_TOPLEVEL)
+	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		fmt.Printf("Error occurred: '%s'", err.Error())
+	}
+	win.SetTitle("Other Dentry")
 
-	window.SetPosition(gtk.WIN_POS_CENTER)
-
-	window.SetTitle("Dentry")
-
-	// required to end program properly; first string needs to be "destroy"
-	window.Connect("destroy", func() {
+	// required to end program properly; first string needs to be as supported signal e.g. "destroy"
+	win.Connect("destroy", func(){
 		gtk.MainQuit()
 	})
 
 	// required to show window
-	window.ShowAll()
+	win.ShowAll()
+
 	// required to display window
 	gtk.Main()
 }
