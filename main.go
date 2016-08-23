@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/mattn/go-gtk/gtk"
-	"github.com/mattn/go-gtk/glib"
 )
 
 func main() {
@@ -17,13 +16,13 @@ func main() {
 
 	window.SetTitle("Dentry")
 
-	// required to end program properly; first string needs to be "destroy", other text is required but can be
-	// set freely.
-	window.Connect("destroy", func(ctx *glib.CallbackContext) {
-		println("Close Dentry.", ctx.Data().(string))
+	// required to end program properly; first string needs to be "destroy"
+	window.Connect("destroy", func() {
 		gtk.MainQuit()
-	}, "Dentry closed")
+	})
 
+	// required to show window
 	window.ShowAll()
+	// required to display window
 	gtk.Main()
 }
