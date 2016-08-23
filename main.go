@@ -9,22 +9,25 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
-	"bytes"
-	"bufio"
-	"strings"
 )
 
+// tagEntList is the container for tagEnt instances
 type tagEntList struct {
 	content []tagEnt
 }
 
-type tagEnt struct{
+// tagEnt contains information stored in data and data associated with
+// this information stored in tags
+type tagEnt struct {
 	tags []string
 	body string
 }
@@ -54,6 +57,7 @@ func main() {
 	app(&cont)
 }
 
+// app is the main function to open the GUI application
 func app(cont *[]byte) {
 	gtk.Init(nil)
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
@@ -62,10 +66,10 @@ func app(cont *[]byte) {
 	}
 	win.SetTitle("Dentry")
 
-	win.SetDefaultSize(800,600)
+	win.SetDefaultSize(800, 600)
 
 	// required to end program properly; first string needs to be as supported signal e.g. "destroy"
-	win.Connect("destroy", func(){
+	win.Connect("destroy", func() {
 		gtk.MainQuit()
 	})
 
@@ -83,6 +87,13 @@ func app(cont *[]byte) {
 	gtk.Main()
 }
 
+// testToEnt scans a byte array and splits the content at '(#)' and removes the '(#)' occurrence.
+// The resulting pieces are further split at '#)'. If '#)' exists, the first part is further
+// split at ',' occurrences, the individual pieces are trimmed of whitespaces and
+// stored in the tags field of a new tagEnt instance. The second part is stored in the
+// body part of the tagEnt instance.
+// All new tagEnt instances are stored in a tagEntList instance and returned if no error
+// occurred.
 func textToEnt(cont *[]byte) error {
 	tmp := &tagEntList{}
 
@@ -91,7 +102,7 @@ func textToEnt(cont *[]byte) error {
 	s.Split(splitOnHash)
 	for s.Scan() {
 		curr := strings.Replace(s.Text(), "(#)", "", 1)
-		currParts := strings.Split(curr,"#)")
+		currParts := strings.Split(curr, "#)")
 		if len(currParts) > 1 {
 			currTags := strings.Split(currParts[0], ",")
 
@@ -106,7 +117,7 @@ func textToEnt(cont *[]byte) error {
 		}
 	}
 	if err := s.Err(); err != nil {
-		return  err
+		return err
 	}
 
 	for _, entry := range tmp.content {
@@ -116,10 +127,12 @@ func textToEnt(cont *[]byte) error {
 	return nil
 }
 
+// splitOnHash is a function satisfying bufio SplitFunc
+// splitting a byte array at '(#)'.
 func splitOnHash(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	for i := 0; i < len(data); i++ {
-		if(data[i] == '(' && data[i+1] == '#' && data[i+2] == ')') {
-			return i+3, data[:i+3], nil
+		if data[i] == '(' && data[i+1] == '#' && data[i+2] == ')' {
+			return i + 3, data[:i+3], nil
 		}
 	}
 	return 0, data, bufio.ErrFinalToken
