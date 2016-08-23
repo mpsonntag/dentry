@@ -60,7 +60,6 @@ func app(tagList *[]tagEnt) {
 		fmt.Printf("Error occurred: '%s'", err.Error())
 	}
 	win.SetTitle("Dentry")
-
 	win.SetDefaultSize(800, 600)
 
 	// required to end program properly; first string needs to be as supported signal e.g. "destroy"
@@ -72,17 +71,20 @@ func app(tagList *[]tagEnt) {
 	if err != nil {
 		fmt.Printf("Error creating grid: %s\n", err.Error())
 	}
+	grid.SetRowSpacing(10)
+	grid.SetColumnSpacing(10)
 
 	for i, ent := range *tagList {
 		label, err := gtk.LabelNew(ent.body)
 		if err != nil {
-			fmt.Println("Error creating label")
+			fmt.Printf("Error creating label: %s\n", err.Error())
 			return
 		}
 
+		label.SetHAlign(gtk.ALIGN_START)
 		grid.Attach(label, 0, i, 1, 1)
 
-		hboxTag, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 2)
+		hboxTag, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
 		if err != nil {
 			fmt.Printf("Error creating hboxTag: %s", err.Error())
 		}
@@ -123,8 +125,8 @@ func textToEnt(cont *[]byte) (*[]tagEnt, error) {
 	s := bufio.NewScanner(r)
 	s.Split(splitOnHash)
 	for s.Scan() {
-		curr := strings.Replace(s.Text(), "(#)", "", 1)
-		currParts := strings.Split(curr, "#)")
+		curr := strings.Replace(s.Text(), "(#)", "", -1)
+		currParts := strings.Split(curr, "#)\n")
 		if len(currParts) > 1 {
 			currTags := strings.Split(currParts[0], ",")
 
@@ -150,12 +152,15 @@ func textToEnt(cont *[]byte) (*[]tagEnt, error) {
 	return &tmp, nil
 }
 
-// splitOnHash is a function satisfying bufio SplitFunc
-// splitting a byte array at '(#)'.
+// splitOnHash is a function satisfying bufio SplitFunc splitting a byte array at '\n(#)'.
 func splitOnHash(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	for i := 0; i < len(data); i++ {
+	for i := 1; i < len(data); i++ {
 		if data[i] == '(' && data[i+1] == '#' && data[i+2] == ')' {
-			return i + 3, data[:i+3], nil
+			// accept the split sign only at the beginning of a line
+			tmp := string(data[i-1 : i+1])
+			if tmp == "\n(" {
+				return i + 3, data[:i+3], nil
+			}
 		}
 	}
 	return 0, data, bufio.ErrFinalToken
