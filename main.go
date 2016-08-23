@@ -15,7 +15,19 @@ import (
 	"path/filepath"
 
 	"github.com/gotk3/gotk3/gtk"
+	"bytes"
+	"bufio"
 )
+
+type tagEntList struct {
+	content []tagEnt
+}
+
+type tagEnt struct{
+	id string
+	tags []string
+	body string
+}
 
 func main() {
 	basePath := os.Getenv("GOPATH")
@@ -33,7 +45,11 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Error reading file: '%s'", err.Error()))
 	}
-	fmt.Printf("file content: \n\n---\n%s\n---\n", string(cont))
+
+	err = textToEnt(&cont)
+	if err != nil {
+		panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
+	}
 
 	app(&cont)
 }
@@ -65,4 +81,26 @@ func app(cont *[]byte) {
 
 	// required to display window
 	gtk.Main()
+}
+
+func textToEnt(cont *[]byte) error {
+	r := bytes.NewReader(*cont)
+	s := bufio.NewScanner(r)
+	s.Split(splitOnHash)
+	for s.Scan() {
+		fmt.Printf("Current entity: '%s'\n", s.Text())
+	}
+	if err := s.Err(); err != nil {
+		return  err
+	}
+	return nil
+}
+
+func splitOnHash(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	for i := 0; i < len(data); i++ {
+		if(data[i] == '(' && data[i+1] == '#' && data[i+2] == ')') {
+			return i + 3, data[:i+2], nil
+		}
+	}
+	return 0, data, bufio.ErrFinalToken
 }
