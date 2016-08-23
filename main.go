@@ -17,6 +17,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 	"bytes"
 	"bufio"
+	"strings"
 )
 
 type tagEntList struct {
@@ -24,7 +25,6 @@ type tagEntList struct {
 }
 
 type tagEnt struct{
-	id string
 	tags []string
 	body string
 }
@@ -84,22 +84,42 @@ func app(cont *[]byte) {
 }
 
 func textToEnt(cont *[]byte) error {
+	tmp := &tagEntList{}
+
 	r := bytes.NewReader(*cont)
 	s := bufio.NewScanner(r)
 	s.Split(splitOnHash)
 	for s.Scan() {
-		fmt.Printf("Current entity: '%s'\n", s.Text())
+		curr := strings.Replace(s.Text(), "(#)", "", 1)
+		currParts := strings.Split(curr,"#)")
+		if len(currParts) > 1 {
+			currTags := strings.Split(currParts[0], ",")
+
+			for i := range currTags {
+				currTags[i] = strings.TrimSpace(currTags[i])
+			}
+			t := tagEnt{
+				tags: currTags,
+				body: currParts[1],
+			}
+			tmp.content = append(tmp.content, t)
+		}
 	}
 	if err := s.Err(); err != nil {
 		return  err
 	}
+
+	for _, entry := range tmp.content {
+		fmt.Printf("\tTags: '%s'\n\tcontent: '%s'\n", entry.tags, entry.body)
+	}
+
 	return nil
 }
 
 func splitOnHash(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	for i := 0; i < len(data); i++ {
 		if(data[i] == '(' && data[i+1] == '#' && data[i+2] == ')') {
-			return i + 3, data[:i+2], nil
+			return i+3, data[:i+3], nil
 		}
 	}
 	return 0, data, bufio.ErrFinalToken
