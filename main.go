@@ -54,6 +54,8 @@ func main() {
 
 // app is the main function to open the GUI application
 func app(tagList *[]tagEnt) {
+	gtk.BuilderNew()
+
 	gtk.Init(nil)
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
@@ -104,11 +106,46 @@ func app(tagList *[]tagEnt) {
 
 	win.Add(grid)
 
+	fn, err := runFileChooser(win)
+	if err != nil {
+		fmt.Printf("Error running file chooser: %s\n", err.Error())
+	}
+	fmt.Printf("The following file has been chosen: %s\n", fn)
+
 	// required to show window
 	win.ShowAll()
 
 	// required to display window
 	gtk.Main()
+}
+
+// runFileChooser creates a gtk FileChooserDialog and returns
+// the path of the selected file as string.
+func runFileChooser(win *gtk.Window) (string, error) {
+
+	var fn string
+
+	openFile, err := gtk.FileChooserDialogNewWith2Buttons("Open file", win, gtk.FILE_CHOOSER_ACTION_OPEN,
+		"Cancel", gtk.RESPONSE_CANCEL,
+		"Ok", gtk.RESPONSE_OK)
+	if err != nil {
+		return "", err
+	}
+
+	openFile.SetDefaultSize(50, 50)
+
+	res := openFile.Run()
+
+	if res == int(gtk.RESPONSE_OK) {
+		fn = openFile.FileChooser.GetFilename()
+		openFile.Destroy()
+	} else if res == int(gtk.RESPONSE_DELETE_EVENT) {
+		openFile.Destroy()
+	} else if res == int(gtk.RESPONSE_CANCEL) {
+		openFile.Destroy()
+	}
+
+	return fn, nil
 }
 
 // testToEnt scans a byte array and splits the content at '(#)' and removes the '(#)' occurrence.
