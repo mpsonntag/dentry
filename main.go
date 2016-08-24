@@ -28,6 +28,12 @@ type tagEnt struct {
 }
 
 func main() {
+
+	win, err := appStart()
+	if err != nil {
+		panic(fmt.Sprintf("Error creating main window: %s\n", err.Error()))
+	}
+
 	basePath := os.Getenv("GOPATH")
 	if basePath == "" {
 		panic("Cannot find gopath")
@@ -35,9 +41,8 @@ func main() {
 	resPath := filepath.Join(basePath, "src", "spielwiese", "dentry", "res")
 
 	inFile := filepath.Join(resPath, "parse.txt")
-	outFile := filepath.Join(resPath, "out")
 
-	fmt.Printf("InFile: '%s', outFile: '%s'\n", inFile, outFile)
+	fmt.Printf("InFile: '%s'\n", inFile)
 
 	cont, err := ioutil.ReadFile(inFile)
 	if err != nil {
@@ -49,17 +54,18 @@ func main() {
 		panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
 	}
 
-	app(tagList)
+	appShowTags(win, tagList)
+
+	appConsolatoryWin(win)
+
 }
 
-// app is the main function to open the GUI application
-func app(tagList *[]tagEnt) {
-	gtk.BuilderNew()
-
+// appStart is the main function to open the GUI application
+func appStart() (*gtk.Window, error) {
 	gtk.Init(nil)
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
-		fmt.Printf("Error occurred: '%s'", err.Error())
+		return nil, err
 	}
 	win.SetTitle("Dentry")
 	win.SetDefaultSize(800, 600)
@@ -68,7 +74,11 @@ func app(tagList *[]tagEnt) {
 	win.Connect("destroy", func() {
 		gtk.MainQuit()
 	})
+	return win, nil
+}
 
+// appShowTag displays a list of tags in the main window
+func appShowTags(win *gtk.Window, tagList *[]tagEnt) {
 	grid, err := gtk.GridNew()
 	if err != nil {
 		fmt.Printf("Error creating grid: %s\n", err.Error())
@@ -117,6 +127,16 @@ func app(tagList *[]tagEnt) {
 
 	// required to display window
 	gtk.Main()
+}
+
+// appConsolatoryWin shows a label, if no tags were loaded.
+func appConsolatoryWin(win *gtk.Window) {
+	lbl, err := gtk.LabelNew("There were no tags to be displayed, sorry!")
+	if err != nil {
+		fmt.Printf("Error creating consolatory label: %s", err.Error())
+		return
+	}
+	win.Add(lbl)
 }
 
 // runFileChooser creates a gtk FileChooserDialog and returns
