@@ -9,25 +9,14 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
+	"spielwiese/dentry/lib"
 )
-
-const tagFileHeader = "!Tagnotes"
-
-// tagEnt contains information stored in data and data associated with
-// this information stored in tags
-type tagEnt struct {
-	tags []string
-	body string
-}
 
 func main() {
 
@@ -47,13 +36,13 @@ func main() {
 		panic(fmt.Sprintf("Error reading file: '%s'", err.Error()))
 	}
 
-	ok, err := isTagNote(&cont)
+	ok, err := lib.IsTagNote(&cont)
 	if err != nil {
 		fmt.Printf("Error trying to check file header: %s\n", err.Error())
 	}
 
 	if ok {
-		tagList, err := textToEnt(&cont)
+		tagList, err := lib.TextToEnt(&cont)
 		if err != nil {
 			panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
 		}
@@ -81,7 +70,7 @@ func appStart() (*gtk.Window, error) {
 }
 
 // appShowTag displays a list of tags in the main window
-func appShowTags(win *gtk.Window, tagList *[]tagEnt) {
+func appShowTags(win *gtk.Window, tagList *[]lib.TagEnt) {
 	grid, err := gtk.GridNew()
 	if err != nil {
 		fmt.Printf("Error creating grid: %s\n", err.Error())
@@ -90,7 +79,7 @@ func appShowTags(win *gtk.Window, tagList *[]tagEnt) {
 	grid.SetColumnSpacing(10)
 
 	for i, ent := range *tagList {
-		label, err := gtk.LabelNew(ent.body)
+		label, err := gtk.LabelNew(ent.Content)
 		if err != nil {
 			fmt.Printf("Error creating label: %s\n", err.Error())
 			return
@@ -104,7 +93,7 @@ func appShowTags(win *gtk.Window, tagList *[]tagEnt) {
 			fmt.Printf("Error creating hboxTag: %s", err.Error())
 		}
 
-		for _, tag := range ent.tags {
+		for _, tag := range ent.Tags {
 			but, err := gtk.ButtonNew()
 			if err != nil {
 				fmt.Printf("Error creating button: %s", err.Error())
@@ -173,70 +162,4 @@ func runFileChooser(win *gtk.Window) (string, error) {
 	}
 
 	return fn, nil
-}
-
-// isTagNote returns true if a byte array starts with a specific header sequence, false if not.
-func isTagNote(cont *[]byte) (bool, error) {
-	r := bytes.NewReader(*cont)
-	br := bufio.NewReader(r)
-	l, _, err:= br.ReadLine()
-	if err != nil {
-		return false, err
-	}
-	return strings.Index(string(l), tagFileHeader) == 0, nil
-}
-
-// testToEnt scans a byte array and splits the content at '(#)' and removes the '(#)' occurrence.
-// The resulting pieces are further split at '#)'. If '#)' exists, the first part is further
-// split at ',' occurrences, the individual pieces are trimmed of whitespaces and
-// stored in the tags field of a new tagEnt instance. The second part is stored in the
-// body part of the tagEnt instance.
-// All new tagEnt instances are stored in a tagEntList instance and returned if no error
-// occurred.
-func textToEnt(cont *[]byte) (*[]tagEnt, error) {
-	tmp := make([]tagEnt, 0, 32)
-
-	r := bytes.NewReader(*cont)
-	s := bufio.NewScanner(r)
-	s.Split(splitOnHash)
-	for s.Scan() {
-		curr := strings.Replace(s.Text(), "(#)", "", -1)
-		currParts := strings.Split(curr, "#)\n")
-		if len(currParts) > 1 {
-			currTags := strings.Split(currParts[0], ",")
-
-			for i := range currTags {
-				currTags[i] = strings.TrimSpace(currTags[i])
-			}
-			t := tagEnt{
-				tags: currTags,
-				body: currParts[1],
-			}
-			tmp = append(tmp, t)
-		}
-	}
-	if err := s.Err(); err != nil {
-		return nil, err
-	}
-
-	// TODO for testing only, remove later
-	for _, entry := range tmp {
-		fmt.Printf("\tTags: '%s'\n\tcontent: '%s'\n", entry.tags, entry.body)
-	}
-
-	return &tmp, nil
-}
-
-// splitOnHash is a function satisfying bufio SplitFunc splitting a byte array at '\n(#)'.
-func splitOnHash(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	for i := 1; i < len(data); i++ {
-		if data[i] == '(' && data[i+1] == '#' && data[i+2] == ')' {
-			// accept the split sign only at the beginning of a line
-			tmp := string(data[i-1 : i+1])
-			if tmp == "\n(" {
-				return i + 3, data[:i+3], nil
-			}
-		}
-	}
-	return 0, data, bufio.ErrFinalToken
 }
