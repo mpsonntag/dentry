@@ -20,6 +20,8 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+const tagFileHeader = "!Tagnotes"
+
 // tagEnt contains information stored in data and data associated with
 // this information stored in tags
 type tagEnt struct {
@@ -39,25 +41,26 @@ func main() {
 		panic("Cannot find gopath")
 	}
 	resPath := filepath.Join(basePath, "src", "spielwiese", "dentry", "res")
-
 	inFile := filepath.Join(resPath, "parse.txt")
-
-	fmt.Printf("InFile: '%s'\n", inFile)
-
 	cont, err := ioutil.ReadFile(inFile)
 	if err != nil {
 		panic(fmt.Sprintf("Error reading file: '%s'", err.Error()))
 	}
 
-	tagList, err := textToEnt(&cont)
+	ok, err := isTagNote(&cont)
 	if err != nil {
-		panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
+		fmt.Printf("Error trying to check file header: %s\n", err.Error())
 	}
 
-	appShowTags(win, tagList)
-
-	appConsolatoryWin(win)
-
+	if ok {
+		tagList, err := textToEnt(&cont)
+		if err != nil {
+			panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
+		}
+		appShowTags(win, tagList)
+	} else {
+		appConsolatoryWin(win)
+	}
 }
 
 // appStart is the main function to open the GUI application
@@ -170,6 +173,17 @@ func runFileChooser(win *gtk.Window) (string, error) {
 	}
 
 	return fn, nil
+}
+
+// isTagNote returns true if a byte array starts with a specific header sequence, false if not.
+func isTagNote(cont *[]byte) (bool, error) {
+	r := bytes.NewReader(*cont)
+	br := bufio.NewReader(r)
+	l, _, err:= br.ReadLine()
+	if err != nil {
+		return false, err
+	}
+	return strings.Index(string(l), tagFileHeader) == 0, nil
 }
 
 // testToEnt scans a byte array and splits the content at '(#)' and removes the '(#)' occurrence.
