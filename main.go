@@ -137,6 +137,10 @@ func appConsolatoryWin(win *gtk.Window) {
 		return
 	}
 	win.Add(lbl)
+	// required to show window
+	win.ShowAll()
+	// required to display window
+	gtk.Main()
 }
 
 // runFileChooser creates a gtk FileChooserDialog and returns
