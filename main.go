@@ -18,78 +18,42 @@ import (
 
 func main() {
 
-	//win, err := appStart()
-	_, err := appStart()
-	if err != nil {
-		panic(fmt.Sprintf("Error creating main window: %s\n", err.Error()))
-	}
-
-	/*
-		basePath := os.Getenv("GOPATH")
-		if basePath == "" {
-			panic("Cannot find gopath")
-		}
-		resPath := filepath.Join(basePath, "src", "spielwiese", "dentry", "res")
-		inFile := filepath.Join(resPath, "parse.txt")
-		cont, err := ioutil.ReadFile(inFile)
-		if err != nil {
-			panic(fmt.Sprintf("Error reading file: '%s'", err.Error()))
-		}
-
-		ok, err := lib.IsTagNote(&cont)
-		if err != nil {
-			fmt.Printf("Error trying to check file header: %s\n", err.Error())
-		}
-
-		if ok {
-			tagList, err := lib.TextToEnt(&cont)
-			if err != nil {
-				panic(fmt.Sprintf("Error splitting content: '%s'", err.Error()))
-			}
-			appShowTags(win, tagList)
-		} else {
-			appConsolatoryWin(win)
-		}
-	*/
-}
-
-// appStart is the main function to open the GUI application
-func appStart() (*gtk.Window, error) {
 	gtk.Init(nil)
 
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
-		return nil, err
+		panic(fmt.Sprintf("Error creating main window: %s\n", err.Error()))
 	}
-	win.SetTitle("Dentry")
-	win.SetDefaultSize(800, 600)
-
 	// required to end program properly; first string needs to be as supported signal e.g. "destroy"
 	win.Connect("destroy", func() {
 		gtk.MainQuit()
 	})
 
+	win.SetTitle("Dentry")
+	win.SetDefaultSize(800, 600)
+
+	err = appStart(win)
+	if err != nil {
+		panic(fmt.Sprintf("Error populating main window: %s\n", err.Error()))
+	}
+
+	// starts the main loop of the application, waiting for sthg to happen
+	gtk.Main()
+}
+
+// appStart is the main function to open the GUI application
+func appStart(win *gtk.Window) error {
+
 	btn, err := gtk.ButtonNewWithLabel("Parse file")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	btn.Connect("clicked", handleFiles, win)
-	/*
-		app, err := gtk.ApplicationNew("dentryApp", glib.APPLICATION_FLAGS_NONE)
-		if err != nil {
-			return nil, err
-		}
-		app.AddWindow(win)
-	*/
-
 	win.Add(btn)
-
 	win.ShowAll()
-	// required to display window
-	gtk.Main()
 
-	return win, nil
+	return nil
 }
 
 // appShowTag displays a list of tags in the main window
@@ -129,19 +93,23 @@ func appShowTags(win *gtk.Window, tagList *[]lib.TagEnt) {
 		grid.Attach(hboxTag, 1, i, 1, 1)
 	}
 
-	win.Add(grid)
-
-	fn, err := runFileChooser(win)
+	vbox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
 	if err != nil {
-		fmt.Printf("Error running file chooser: %s\n", err.Error())
+		fmt.Printf("Error creating vbox: %s\n", err.Error())
+		return
 	}
-	fmt.Printf("The following file has been chosen: %s\n", fn)
+	vbox.Add(grid)
 
-	// required to show window
+	btn, err := gtk.ButtonNewWithLabel("Try again")
+	if err != nil {
+		fmt.Printf("Error creating file reload button: %s\n", err.Error())
+		return
+	}
+	btn.Connect("clicked", handleFiles, win)
+
+	vbox.Add(btn)
+	win.Add(vbox)
 	win.ShowAll()
-
-	// required to display window
-	gtk.Main()
 }
 
 // appConsolatoryWin shows a label, if no tags were loaded.
@@ -157,7 +125,7 @@ func appConsolatoryWin(win *gtk.Window) {
 		fmt.Printf("Error creating file reload button: %s\n", err.Error())
 		return
 	}
-	//btn.Connect("clicked", handleFiles(win))
+	btn.Connect("clicked", handleFiles, win)
 
 	vbox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
 	if err != nil {
@@ -167,13 +135,13 @@ func appConsolatoryWin(win *gtk.Window) {
 	vbox.Add(lbl)
 	vbox.Add(btn)
 	win.Add(vbox)
-	// required to show window
 	win.ShowAll()
-	// required to display window
-	gtk.Main()
 }
 
-func handleFiles(win *gtk.Window) error {
+// handleFiles runs a file chooser and opens and parses any chosen file.
+// If the file is of a parsable format, the results will be displayed,
+// otherwise the file chooser can be opened again.
+func handleFiles(_ *gtk.Button, win *gtk.Window) error {
 	fp, err := runFileChooser(win)
 	if err != nil {
 		fmt.Printf("Error selecting file: %s\n", err.Error())
@@ -182,7 +150,7 @@ func handleFiles(win *gtk.Window) error {
 
 	cont, err := ioutil.ReadFile(fp)
 	if err != nil {
-		fmt.Printf("Error reading file: '%s'", err.Error())
+		fmt.Printf("Error reading file: '%s'\n", err.Error())
 		return err
 	}
 
@@ -191,6 +159,9 @@ func handleFiles(win *gtk.Window) error {
 		fmt.Printf("Error trying to check file header: %s\n", err.Error())
 		return err
 	}
+
+	child, _ := win.GetChild()
+	win.Remove(child)
 
 	if ok {
 		tagList, err := lib.TextToEnt(&cont)
@@ -202,6 +173,7 @@ func handleFiles(win *gtk.Window) error {
 	} else {
 		appConsolatoryWin(win)
 	}
+
 	return nil
 }
 
@@ -214,6 +186,7 @@ func runFileChooser(win *gtk.Window) (string, error) {
 	openFile, err := gtk.FileChooserDialogNewWith2Buttons("Open file", win, gtk.FILE_CHOOSER_ACTION_OPEN,
 		"Cancel", gtk.RESPONSE_CANCEL,
 		"Ok", gtk.RESPONSE_OK)
+	defer openFile.Destroy()
 	if err != nil {
 		return "", err
 	}
@@ -224,11 +197,6 @@ func runFileChooser(win *gtk.Window) (string, error) {
 
 	if res == int(gtk.RESPONSE_OK) {
 		fn = openFile.FileChooser.GetFilename()
-		openFile.Destroy()
-	} else if res == int(gtk.RESPONSE_DELETE_EVENT) {
-		openFile.Destroy()
-	} else if res == int(gtk.RESPONSE_CANCEL) {
-		openFile.Destroy()
 	}
 
 	return fn, nil
