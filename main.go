@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"spielwiese/dentry/lib"
 )
@@ -20,29 +21,36 @@ func main() {
 
 	gtk.Init(nil)
 
+	// application ID has to adhere to the rules defined in g_application_id_is_valid
+	app, err := gtk.ApplicationNew("org.mps.dentry", glib.APPLICATION_FLAGS_NONE)
+	if err != nil {
+		panic(fmt.Sprintf("Error creating application: %s", err.Error()))
+	}
+
+	app.Connect("startup", startup)
+	app.Connect("activate",  createWin)
+
+	// starts the main loop of the application, waiting for sthg to happen
+	gtk.Main()
+}
+
+func startup() {
+	fmt.Println("do I need this?")
+}
+
+func createWin(app *gtk.Application) error {
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
 		panic(fmt.Sprintf("Error creating main window: %s\n", err.Error()))
 	}
 	// required to end program properly; first string needs to be as supported signal e.g. "destroy"
+	// don't know if this is the proper point or way to end the application, but for now it works.
 	win.Connect("destroy", func() {
 		gtk.MainQuit()
 	})
 
 	win.SetTitle("Dentry")
 	win.SetDefaultSize(800, 600)
-
-	err = appStart(win)
-	if err != nil {
-		panic(fmt.Sprintf("Error populating main window: %s\n", err.Error()))
-	}
-
-	// starts the main loop of the application, waiting for sthg to happen
-	gtk.Main()
-}
-
-// appStart is the main function to open the GUI application
-func appStart(win *gtk.Window) error {
 
 	btn, err := gtk.ButtonNewWithLabel("Parse file")
 	if err != nil {
@@ -52,6 +60,21 @@ func appStart(win *gtk.Window) error {
 	btn.Connect("clicked", handleFiles, win)
 	win.Add(btn)
 	win.ShowAll()
+
+/*
+	err = appStart(win)
+	if err != nil {
+		panic(fmt.Sprintf("Error populating main window: %s\n", err.Error()))
+	}
+*/
+	app.AddWindow(win)
+
+	return nil
+}
+
+// appStart is the main function to open the GUI application
+func appStart(win *gtk.Window) error {
+
 
 	return nil
 }
