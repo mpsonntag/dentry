@@ -14,7 +14,7 @@ import (
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"spielwiese/dentry/lib"
+	"github.com/mpsonntag/dentry/lib"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	app.Connect("startup", startup)
-	app.Connect("activate",  createWin)
+	app.Connect("activate", createWin)
 
 	// starts the main loop of the application, waiting for sthg to happen
 	gtk.Main()
@@ -61,12 +61,12 @@ func createWin(app *gtk.Application) error {
 	win.Add(btn)
 	win.ShowAll()
 
-/*
-	err = appStart(win)
-	if err != nil {
-		panic(fmt.Sprintf("Error populating main window: %s\n", err.Error()))
-	}
-*/
+	/*
+		err = appStart(win)
+		if err != nil {
+			panic(fmt.Sprintf("Error populating main window: %s\n", err.Error()))
+		}
+	*/
 	app.AddWindow(win)
 
 	return nil
@@ -74,7 +74,6 @@ func createWin(app *gtk.Application) error {
 
 // appStart is the main function to open the GUI application
 func appStart(win *gtk.Window) error {
-
 
 	return nil
 }
