@@ -30,6 +30,22 @@ const (
 	// DEBUG LogLevel is logged to the Standard writer.
 	DEBUG
 )
+
+func (lvl LogLevel) String() string {
+	switch lvl {
+
+	case DEBUG:
+		return "DEBUG"
+	case INFO:
+		return "INFO"
+	case WARN:
+		return "WARNING"
+	case ERR:
+		return "ERROR"
+	}
+
+	return "UNDEFINED"
+}
 func main() {
 
 	gtk.Init(nil)
