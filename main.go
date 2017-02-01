@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -46,6 +47,11 @@ func (lvl LogLevel) String() string {
 
 	return "UNDEFINED"
 }
+
+func log(lvl LogLevel, message string) {
+	fmt.Fprintf(os.Stdout, "[%s] %s\n", lvl.String(), message)
+}
+
 func main() {
 
 	gtk.Init(nil)
