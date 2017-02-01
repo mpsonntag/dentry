@@ -17,6 +17,19 @@ import (
 	"github.com/mpsonntag/dentry/lib"
 )
 
+// LogLevel is the definition of various logging levels.
+type LogLevel int
+
+const (
+	// ERR LogLevel is logged to the Error writer.
+	ERR LogLevel = iota
+	// WARN LogLevel is logged to the Standard writer.
+	WARN
+	// INFO LogLevel is logged to the Standard writer.
+	INFO
+	// DEBUG LogLevel is logged to the Standard writer.
+	DEBUG
+)
 func main() {
 
 	gtk.Init(nil)
