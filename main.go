@@ -13,7 +13,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/mpsonntag/dentry/lib"
 )
@@ -58,37 +57,12 @@ func log(lvl LogLevel, message string) {
 }
 
 func main() {
-
 	log(DEBUG, "Init gtk")
 	gtk.Init(nil)
 
-	log(DEBUG, "Create application")
-	// application ID has to adhere to the rules defined in g_application_id_is_valid
-	app, err := gtk.ApplicationNew("org.mps.dentry", glib.APPLICATION_FLAGS_NONE)
-	if err != nil {
-		log(ERR, fmt.Sprintf("Error creating application: %s", err.Error()))
-		os.Exit(-1)
-	}
-
-	log(DEBUG, "Startup application")
-	app.Connect("startup", startup)
-	log(DEBUG, "Activate application")
-	app.Connect("activate", createWin)
-
-	// starts the main loop of the application, waiting for sthg to happen
-	log(DEBUG, "Start main")
-	gtk.Main()
-	log(DEBUG, "Main started")
-}
-
-func startup() {
-	log(DEBUG, "Startup: is this required?")
-}
-
-func createWin(app *gtk.Application) error {
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
-		log(ERR, fmt.Sprintf("Error creating main window: %s\n", err.Error()))
+		log(ERR, fmt.Sprintf(" creating main window: %s\n", err.Error()))
 		os.Exit(-1)
 	}
 	// required to end program properly; first string needs to be as supported signal e.g. "destroy"
@@ -102,29 +76,18 @@ func createWin(app *gtk.Application) error {
 
 	btn, err := gtk.ButtonNewWithLabel("Parse file")
 	if err != nil {
-		return err
+		log(ERR, fmt.Sprintf(" creating main window content: %s\n", err.Error()))
+		os.Exit(-1)
 	}
 
 	btn.Connect("clicked", handleFiles, win)
 	win.Add(btn)
 	win.ShowAll()
 
-	/*
-		err = appStart(win)
-		if err != nil {
-			log(ERR, fmt.Sprintf("Exit on populating main window: %s\n", err.Error()))
-			os.Exit(-1)
-		}
-	*/
-	app.AddWindow(win)
-
-	return nil
-}
-
-// appStart is the main function to open the GUI application
-func appStart(win *gtk.Window) error {
-
-	return nil
+	// starts the main loop of the application, waiting for sthg to happen
+	log(DEBUG, "Start main")
+	gtk.Main()
+	log(DEBUG, "Main started")
 }
 
 // appShowTag displays a list of tags in the main window
