@@ -22,14 +22,14 @@ import (
 type LogLevel int
 
 const (
-	// ERR LogLevel is logged to the Error writer.
-	ERR LogLevel = iota
-	// WARN LogLevel is logged to the Standard writer.
-	WARN
+	// DEBUG LogLevel is logged to the Standard writer.
+	DEBUG LogLevel = iota
 	// INFO LogLevel is logged to the Standard writer.
 	INFO
-	// DEBUG LogLevel is logged to the Standard writer.
-	DEBUG
+	// WARN LogLevel is logged to the Error writer.
+	WARN
+	// ERR LogLevel is logged to the Error writer.
+	ERR
 )
 
 func (lvl LogLevel) String() string {
@@ -49,6 +49,11 @@ func (lvl LogLevel) String() string {
 }
 
 func log(lvl LogLevel, message string) {
+
+	if lvl > INFO {
+		fmt.Fprintf(os.Stderr, "[%s] %s\n", lvl.String(), message)
+	}
+
 	fmt.Fprintf(os.Stdout, "[%s] %s\n", lvl.String(), message)
 }
 
